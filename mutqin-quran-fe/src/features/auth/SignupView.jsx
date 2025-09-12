@@ -14,7 +14,12 @@ import {
   Paper,
   Avatar,
   Link,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useAuthViewModel } from "./AuthViewModel";
+import { USER_ROLES, MEMORIZATION_LEVELS } from "./AuthModel";
 
 const validationSchema = Yup.object({
   username: Yup.string().required("اسم المستخدم مطلوب"),
@@ -35,9 +40,60 @@ const validationSchema = Yup.object({
     .oneOf([Yup.ref("password"), null], "كلمات المرور غير متطابقة")
     .required("تأكيد كلمة المرور مطلوب"),
   userRole: Yup.string().required("يرجى اختيار الدور"),
+  memorizationLevel: Yup.string().when('userRole', {
+    is: USER_ROLES.STUDENT,
+    then: (schema) => schema.required("يرجى اختيار مستوى الحفظ"),
+    otherwise: (schema) => schema.notRequired()
+  }),
 });
 
 export default function SignupView() {
+  const navigate = useNavigate();
+  const { signup, isLoading, error, clearError } = useAuthViewModel();
+
+  const handleSubmit = async (values, { setSubmitting, setStatus }) => {
+    clearError();
+    setStatus(null);
+    
+    try {
+      const result = await signup(
+        values.username,
+        values.email,
+        values.phoneNumber,  // Form field is 'phoneNumber'
+        values.password,
+        values.confirmPassword,
+        values.userRole,     // Form field is 'userRole'
+        values.memorizationLevel || '' // Form field is 'memorizationLevel'
+      );
+
+      if (result.success) {
+        setStatus({
+          type: 'success',
+          message: result.message || 'تم إنشاء الحساب بنجاح'
+        });
+        
+        // If auto login, redirect to dashboard
+        if (result.autoLogin) {
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1500);
+        } else {
+          // Otherwise redirect to login
+          setTimeout(() => {
+            navigate('/login');
+          }, 1500);
+        }
+      } else {
+        // Error will be handled by AuthViewModel error state
+        // No need to set status error since we already have error display
+      }
+    } catch {
+      // Error will be handled by AuthViewModel error state
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Box
       className="flex justify-center items-center"
@@ -94,14 +150,38 @@ export default function SignupView() {
             phoneNumber: "",
             password: "",
             confirmPassword: "",
+            memorizationLevel: "",
           }}
           validationSchema={validationSchema}
-          onSubmit={(values) => {
-            console.log(values);
-          }}
+          onSubmit={handleSubmit}
         >
-          {({ handleChange, handleSubmit, values, errors, touched }) => (
-            <Form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {({ handleChange, handleSubmit: formikHandleSubmit, values, errors, touched, isSubmitting, status }) => (
+            <Form onSubmit={formikHandleSubmit} className="flex flex-col gap-4">
+              {/* Display success messages */}
+              {status && status.type === 'success' && (
+                <Alert 
+                  severity="success" 
+                  sx={{ 
+                    marginBottom: 2,
+                    borderRadius: '12px'
+                  }}
+                >
+                  {status.message}
+                </Alert>
+              )}
+
+              {/* Display auth error */}
+              {error && (
+                <Alert 
+                  severity="error" 
+                  sx={{ 
+                    marginBottom: 2,
+                    borderRadius: '12px'
+                  }}
+                >
+                  {error}
+                </Alert>
+              )}
               {/* الدور */}
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '90%' }}>
                 <RadioGroup
@@ -116,9 +196,9 @@ export default function SignupView() {
                     gap: 2
                   }}
                 >
-                  <FormControlLabel value="student" control={<Radio />} label="طالب" />
-                  <FormControlLabel value="parent" control={<Radio />} label="ولي أمر" />
-                  <FormControlLabel value="tutor" control={<Radio />} label="معلم" />
+                  <FormControlLabel value={USER_ROLES.STUDENT} control={<Radio />} label="طالب" />
+                  <FormControlLabel value={USER_ROLES.PARENT} control={<Radio />} label="ولي أمر" />
+                  <FormControlLabel value={USER_ROLES.TUTOR} control={<Radio />} label="معلم" />
                 </RadioGroup>
                 {touched.userRole && errors.userRole && (
                   <Typography color="error" variant="body2" sx={{ textAlign: 'center', mt: 1 }}>
@@ -126,6 +206,37 @@ export default function SignupView() {
                   </Typography>
                 )}
               </Box>
+
+              {/* مستوى الحفظ - يظهر فقط للطلاب */}
+              {values.userRole === USER_ROLES.STUDENT && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '90%' }}>
+                  <Typography variant="body2" sx={{ color: '#5A340D', fontWeight: 'bold', mb: 1 }}>
+                    مستوى الحفظ
+                  </Typography>
+                  <RadioGroup
+                    row
+                    name="memorizationLevel"
+                    value={values.memorizationLevel}
+                    onChange={handleChange}
+                    sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: 1,
+                      flexWrap: 'wrap'
+                    }}
+                  >
+                    <FormControlLabel value={MEMORIZATION_LEVELS.BEGINNER} control={<Radio />} label="مبتدئ" />
+                    <FormControlLabel value={MEMORIZATION_LEVELS.INTERMEDIATE} control={<Radio />} label="متوسط" />
+                    <FormControlLabel value={MEMORIZATION_LEVELS.ADVANCED} control={<Radio />} label="متقدم" />
+                  </RadioGroup>
+                  {touched.memorizationLevel && errors.memorizationLevel && (
+                    <Typography color="error" variant="body2" sx={{ textAlign: 'center', mt: 1 }}>
+                      {errors.memorizationLevel}
+                    </Typography>
+                  )}
+                </Box>
+              )}
 
               {/* اسم المستخدم */}
               <TextField
@@ -319,14 +430,23 @@ export default function SignupView() {
                 variant="contained"
                 type="submit"
                 fullWidth
+                disabled={isLoading || isSubmitting}
                 sx={{
                   backgroundColor: "#CD945F",
                   borderRadius: "18px",
                   mt: 2,
                   "&:hover": { backgroundColor: "#b3784d" },
+                  "&:disabled": { backgroundColor: "#e0e0e0" },
                 }}
               >
-                أنشئ حسابًا
+                {isLoading || isSubmitting ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} sx={{ color: 'white' }} />
+                    إنشاء الحساب...
+                  </Box>
+                ) : (
+                  'أنشئ حسابًا'
+                )}
               </Button>
 
               {/* رابط تسجيل الدخول */}

@@ -10,8 +10,11 @@ import {
   Avatar,
   Link,
   Divider,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 import { FcGoogle } from "react-icons/fc";
+import { useAuthViewModel } from "./AuthViewModel.js";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("صيغة البريد الإلكتروني غير صحيحة").required("البريد الإلكتروني مطلوب"),
@@ -19,6 +22,50 @@ const validationSchema = Yup.object({
 });
 
 export default function LoginView() {
+  // Use the authentication view model
+  const {
+    login,
+    isLoading,
+    error,
+    clearError,
+    isAuthenticated
+  } = useAuthViewModel();
+
+  // Handle successful login
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      // Redirect to dashboard or home page after successful login
+      // navigate('/dashboard');
+    }
+  }, [isAuthenticated]);
+
+  // Handle form submission
+  const handleSubmit = async (values, { setSubmitting, setStatus }) => {
+    setStatus(null); // Clear any previous status
+    
+    try {
+      const result = await login(values.email, values.password);
+      
+      if (result.success) {
+        // Show success message
+        setStatus({
+          type: 'success',
+          message: result.message || 'تم تسجيل الدخول بنجاح'
+        });
+        
+        // Navigation will be handled by the useEffect above
+      }
+    } catch (error) {
+      console.error("Unexpected login error:", error);
+      setStatus({
+        type: 'error',
+        message: 'حدث خطأ غير متوقع أثناء تسجيل الدخول'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Box
       className="flex justify-center items-center"
@@ -67,18 +114,51 @@ export default function LoginView() {
           تسجيل الدخول
         </Typography>
 
+        {/* Error Alert */}
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ 
+              mb: 2, 
+              direction: 'rtl',
+              '& .MuiAlert-message': {
+                textAlign: 'right',
+                width: '100%'
+              }
+            }}
+            onClose={clearError}
+          >
+            {error}
+          </Alert>
+        )}
+
         <Formik
           initialValues={{
             email: "",
             password: "",
           }}
           validationSchema={validationSchema}
-          onSubmit={(values) => {
-            console.log(values);
-          }}
+          onSubmit={handleSubmit}
         >
-          {({ handleChange, handleSubmit, values, errors, touched }) => (
+          {({ handleChange, handleSubmit, values, errors, touched, isSubmitting, status }) => (
             <Form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {/* Success/Error Status Messages */}
+              {status && (
+                <Alert 
+                  severity={status.type} 
+                  sx={{ 
+                    mb: 2, 
+                    direction: 'rtl',
+                    '& .MuiAlert-message': {
+                      textAlign: 'right',
+                      width: '100%'
+                    }
+                  }}
+                >
+                  {status.message}
+                </Alert>
+              )}
+              
               {/* البريد الإلكتروني */}
               <TextField
                 fullWidth
@@ -174,6 +254,7 @@ export default function LoginView() {
                 variant="contained"
                 type="submit"
                 fullWidth
+                disabled={isLoading || isSubmitting}
                 sx={{
                   backgroundColor: "#CD945F",
                   borderRadius: "20px",
@@ -191,10 +272,23 @@ export default function LoginView() {
                   },
                   "&:active": {
                     transform: "translateY(0px)"
+                  },
+                  "&:disabled": {
+                    backgroundColor: "#e0e0e0",
+                    color: "#999",
+                    transform: "none",
+                    boxShadow: "none"
                   }
                 }}
               >
-                تسجيل الدخول
+                {(isLoading || isSubmitting) ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={20} sx={{ color: '#666' }} />
+                    <Typography>جارٍ تسجيل الدخول...</Typography>
+                  </Box>
+                ) : (
+                  'تسجيل الدخول'
+                )}
               </Button>
 
               {/* فاصل أو */}
@@ -219,7 +313,7 @@ export default function LoginView() {
                 variant="outlined"
                 fullWidth
                 onClick={() => {
-                  console.log("تسجيل الدخول بـ Google");
+                  // TODO: Implement Google login
                 }}
                 sx={{
                   borderColor: "#E0E0E0",
