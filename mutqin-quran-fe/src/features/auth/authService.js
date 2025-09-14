@@ -288,48 +288,6 @@ const authService = {
   },
 
   /**
-   * Test the specific signup endpoint with minimal data
-   * @returns {Promise<Object>} - Test result
-   */
-  async testSignupEndpoint() {
-    try {
-      // Test with minimal valid data
-      const testData = {
-        username: 'testuser' + Date.now(),
-        email: 'test' + Date.now() + '@example.com',
-        phone: 1000000000, // Use integer phone number
-        password: 'TestPass123!',
-        role: 'STUDENT'
-      };
-      
-      const response = await authApi.post('/signup', testData);
-      
-      return {
-        success: true,
-        message: 'نقطة تسجيل الحساب تعمل بشكل طبيعي',
-        data: response.data
-      };
-    } catch (error) {
-      console.error('Signup endpoint test failed:', error);
-      
-      if (error.response) {
-        return {
-          success: false,
-          error: `نقطة تسجيل الحساب أرجعت رقم حالة ${error.response.status}`,
-          details: error.response.data,
-          suggestedFix: this.getSuggestedFix(error.response.status)
-        };
-      }
-      
-      return {
-        success: false,
-        error: 'لا يمكن الوصول لنقطة تسجيل الحساب',
-        details: error.message
-      };
-    }
-  },
-
-  /**
    * Get suggested fixes for common errors
    * @param {number} status - HTTP status code
    * @returns {string} - Suggested fix

@@ -168,7 +168,7 @@ export const useAuthViewModel = () => {
         return {
           success: true,
           user: result.data.user,
-          message: result.message,
+          message: 'تم إنشاء الحساب بنجاح',
           autoLogin: !!result.data.token
         };
       } else {
