@@ -1,6 +1,7 @@
 import React from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
+import { useNavigate } from "react-router-dom";
 import {
   TextField,
   Button,
@@ -22,6 +23,8 @@ const validationSchema = Yup.object({
 });
 
 export default function LoginView() {
+  const navigate = useNavigate();
+  
   // Use the authentication view model
   const {
     login,
@@ -31,13 +34,13 @@ export default function LoginView() {
     isAuthenticated
   } = useAuthViewModel();
 
-  // Handle successful login
+  // Handle successful login and initial authentication check
   React.useEffect(() => {
     if (isAuthenticated) {
-      // Redirect to dashboard or home page after successful login
-      // navigate('/dashboard');
+      // Redirect to profile page after successful login
+      navigate('/profile', { replace: true });
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   // Handle form submission
   const handleSubmit = async (values, { setSubmitting, setStatus }) => {

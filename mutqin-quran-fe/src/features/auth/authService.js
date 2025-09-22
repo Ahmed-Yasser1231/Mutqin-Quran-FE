@@ -27,10 +27,13 @@ const authService = {
         password,
       });
       
-      // If login is successful, store token in localStorage
-      if (response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      // If login is successful, store ONLY token in localStorage
+      if (response.data.token && response.data.type) {
+        // Format token as "Bearer {token}" for API calls
+        const formattedToken = `${response.data.type} ${response.data.token}`;
+        localStorage.setItem('authToken', formattedToken);
+        // Set auth header for future requests
+        this.setAuthHeader(formattedToken);
       }
       
       return {
@@ -313,7 +316,6 @@ const authService = {
   logout() {
     try {
       localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
       // Clear auth header
       this.setAuthHeader(null);
     } catch (error) {
@@ -327,7 +329,6 @@ const authService = {
   clearAllAuthData() {
     try {
       localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
       this.setAuthHeader(null);
     } catch (error) {
       console.warn('Error clearing auth data:', error);
@@ -347,41 +348,33 @@ const authService = {
   },
 
   /**
-   * Get stored user data
-   * @returns {Object|null} - User data or null
+   * Get stored user data - NO LONGER USED
+   * User data is now fetched from profile API, not stored in localStorage
+   * @returns {Object|null} - Always returns null since we don't store user data
    */
   getUser() {
-    try {
-      const userData = localStorage.getItem('user');
-      if (!userData || userData === 'undefined' || userData === 'null') {
-        return null;
-      }
-      return JSON.parse(userData);
-    } catch (error) {
-      console.warn('Error parsing user data from localStorage:', error);
-      // Clear invalid data
-      localStorage.removeItem('user');
-      return null;
-    }
+    // We no longer store user data in localStorage
+    // User data should be fetched from profile API when needed
+    return null;
   },
 
   /**
-   * Check if user is authenticated
-   * @returns {boolean} - True if user is authenticated
+   * Check if user is authenticated (only checks token, not user data)
+   * @returns {boolean} - True if user has valid token
    */
   isAuthenticated() {
     const token = this.getToken();
-    const user = this.getUser();
-    return !!(token && user);
+    return !!token; // Only check token, not user data
   },
 
   /**
    * Set authorization header for future requests
-   * @param {string} token - Authentication token
+   * @param {string} token - Authentication token (already formatted as "Bearer {token}")
    */
   setAuthHeader(token) {
     if (token) {
-      authApi.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Token is already formatted, use it directly
+      authApi.defaults.headers.common['Authorization'] = token;
     } else {
       delete authApi.defaults.headers.common['Authorization'];
     }
