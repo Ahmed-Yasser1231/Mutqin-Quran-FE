@@ -40,15 +40,29 @@ export default function UserProfileArabicUI() {
     phone: ''
   });
 
+  // Original data to track changes
+  const [originalData, setOriginalData] = useState({
+    username: '',
+    phone: ''
+  });
+
   // Update form data when profile loads
   useEffect(() => {
     if (profile) {
-      setFormData({
+      const profileData = {
         username: profile.username || '',
         phone: profile.phone || ''
-      });
+      };
+      setFormData(profileData);
+      setOriginalData(profileData);
     }
   }, [profile]);
+
+  // Check if data has changed
+  const hasChanges = () => {
+    return formData.username !== originalData.username || 
+           formData.phone !== originalData.phone;
+  };
 
   // Handle input changes
   const handleInputChange = (field) => (event) => {
@@ -60,6 +74,11 @@ export default function UserProfileArabicUI() {
 
   // Handle save changes
   const handleSaveChanges = async () => {
+    // Check if any data has changed
+    if (!hasChanges()) {
+      return; // No changes to save
+    }
+
     try {
       const updateData = {
         username: formData.username,
@@ -68,6 +87,11 @@ export default function UserProfileArabicUI() {
       
       const success = await updateProfile(updateData);
       if (success) {
+        // Update original data to match current data
+        setOriginalData({
+          username: formData.username,
+          phone: formData.phone
+        });
         // Refresh profile data to show updated info
         fetchProfile();
       }
@@ -363,7 +387,7 @@ export default function UserProfileArabicUI() {
           variant="contained"
           fullWidth
           sx={{ bgcolor: '#a86834', '&:hover': { bgcolor: '#8f5426' } }}
-          disabled={isUpdating}
+          disabled={isUpdating || !hasChanges()}
           onClick={handleSaveChanges}
         >
           {isUpdating ? (
@@ -371,6 +395,8 @@ export default function UserProfileArabicUI() {
               <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
               جاري الحفظ...
             </>
+          ) : !hasChanges() ? (
+            'لا توجد تغييرات'
           ) : (
             'حفظ التغييرات'
           )}

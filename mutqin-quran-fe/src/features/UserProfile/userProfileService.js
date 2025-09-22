@@ -122,7 +122,7 @@ const userProfileService = {
    */
   async updateUserProfile(profileData) {
     try {
-      const response = await profileApi.put('/', profileData);
+      const response = await profileApi.put('', profileData);
       
       // Don't store user data - just return the response
       return {
