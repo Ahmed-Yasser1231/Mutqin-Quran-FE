@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Avatar,
@@ -13,9 +13,13 @@ import {
   Container
 } from '@mui/material';
 import { FaSignOutAlt, FaCog, FaBell, FaUser } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import { useUserProfileViewModel } from './UserProfileViewModel.js';
+import authService from '../auth/authService.js';
 
 export default function UserProfileArabicUI() {
+  const navigate = useNavigate();
+  
   const {
     profile,
     isLoading,
@@ -26,8 +30,57 @@ export default function UserProfileArabicUI() {
     reloadProfile,
     clearError,
     clearSuccess,
-    isAuthenticated
+    isAuthenticated,
+    updateProfile
   } = useUserProfileViewModel();
+
+  // Form state
+  const [formData, setFormData] = useState({
+    username: '',
+    phone: ''
+  });
+
+  // Update form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        username: profile.username || '',
+        phone: profile.phone || ''
+      });
+    }
+  }, [profile]);
+
+  // Handle input changes
+  const handleInputChange = (field) => (event) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: event.target.value
+    }));
+  };
+
+  // Handle save changes
+  const handleSaveChanges = async () => {
+    try {
+      const updateData = {
+        username: formData.username,
+        phone: formData.phone
+      };
+      
+      const success = await updateProfile(updateData);
+      if (success) {
+        // Refresh profile data to show updated info
+        fetchProfile();
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/login');
+  };
 
   // success message timeout
   useEffect(() => {
@@ -131,7 +184,7 @@ export default function UserProfileArabicUI() {
             color: 'error.main',
             fontWeight: 'bold'
           }}
-          onClick={() => alert('تسجيل الخروج')}
+          onClick={handleLogout}
         >
           تسجيل الخروج <FaSignOutAlt />
         </MenuItem>
@@ -175,7 +228,8 @@ export default function UserProfileArabicUI() {
         <TextField
           fullWidth
           label="الاسم"
-          defaultValue={profile.username}
+          value={formData.username}
+          onChange={handleInputChange('username')}
           variant="standard"
           sx={{ 
             mb: 2,
@@ -212,7 +266,8 @@ export default function UserProfileArabicUI() {
         <TextField
           fullWidth
           label="رقم الجوال"
-          defaultValue={profile.phone || ''}
+          value={formData.phone}
+          onChange={handleInputChange('phone')}
           variant="standard"
           sx={{ 
             mb: 2,
@@ -226,6 +281,44 @@ export default function UserProfileArabicUI() {
               direction: 'ltr' // Keep phone number LTR
             }
           }}
+        />
+        <TextField
+          fullWidth
+          label="العمر"
+          value={profile.age || ''}
+          variant="standard"
+          sx={{ 
+            mb: 2,
+            '& .MuiInputLabel-root': {
+              right: 0,
+              left: 'auto',
+              transformOrigin: 'top right',
+              textAlign: 'right'
+            },
+            '& .MuiInput-root': {
+              direction: 'ltr'
+            }
+          }}
+          disabled
+        />
+        <TextField
+          fullWidth
+          label="النقاط"
+          value={profile.points || '0'}
+          variant="standard"
+          sx={{ 
+            mb: 2,
+            '& .MuiInputLabel-root': {
+              right: 0,
+              left: 'auto',
+              transformOrigin: 'top right',
+              textAlign: 'right'
+            },
+            '& .MuiInput-root': {
+              direction: 'ltr'
+            }
+          }}
+          disabled
         />
         <TextField
           fullWidth
@@ -271,9 +364,16 @@ export default function UserProfileArabicUI() {
           fullWidth
           sx={{ bgcolor: '#a86834', '&:hover': { bgcolor: '#8f5426' } }}
           disabled={isUpdating}
-          onClick={() => alert('حفظ التغييرات')}
+          onClick={handleSaveChanges}
         >
-          حفظ التغييرات
+          {isUpdating ? (
+            <>
+              <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+              جاري الحفظ...
+            </>
+          ) : (
+            'حفظ التغييرات'
+          )}
         </Button>
       </Paper>
     </Box>

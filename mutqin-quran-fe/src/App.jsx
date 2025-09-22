@@ -3,7 +3,6 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import SignupView  from './features/auth/SignupView';
 import LoginView from './features/auth/LoginView';
 import UserProfileView from './features/UserProfile/UserProfileView';
-import TokenTestComponent from './features/UserProfile/TokenTestComponent';
 import ProtectedRoute from './components/ProtectedRoute';
 import authService from './features/auth/authService.js';
 
@@ -24,7 +23,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route path='/test-token' element={<TokenTestComponent />} />
         <Route 
           path='/' 
           element={
