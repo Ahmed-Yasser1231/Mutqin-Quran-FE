@@ -2,7 +2,7 @@ import axios from 'axios';
 import authService from '../auth/authService.js';
 
 // Base URL for the user profile API
-const PROFILE_API_BASE_URL = 'http://localhost:8080/api/profile';
+const PROFILE_API_BASE_URL = 'https://mutqin-springboot-backend-1.onrender.com/api/profile';
 
 // Create axios instance with default config
 const profileApi = axios.create({

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL for the authentication API
-const API_BASE_URL = 'http://localhost:8080/api/auth';
+const API_BASE_URL = 'https://mutqin-springboot-backend-1.onrender.com/api/auth';
 
 // Create axios instance with default config
 const authApi = axios.create({
@@ -258,7 +258,7 @@ const authService = {
    */
   async testServerHealth() {
     try {
-      const response = await axios.get('http://localhost:8080/actuator/health');
+      const response = await axios.get('https://mutqin-springboot-backend-1.onrender.com/actuator/health');
       
       return {
         success: true,
@@ -277,7 +277,7 @@ const authService = {
       } else if (error.request) {
         return {
           success: false,
-          error: 'لا يمكن الوصول للخادم - هل يعمل على http://localhost:8080؟',
+          error: 'لا يمكن الوصول للخادم - هل يعمل على https://mutqin-springboot-backend-1.onrender.com؟',
           details: error.message
         };
       }
