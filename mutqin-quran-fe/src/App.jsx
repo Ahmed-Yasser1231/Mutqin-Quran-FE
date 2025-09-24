@@ -4,6 +4,7 @@ import SignupView  from './features/auth/SignupView';
 import LoginView from './features/auth/LoginView';
 import UserProfileView from './features/UserProfile/UserProfileView';
 import TutorsView from './features/Tutors/TutorsView';
+import BookSessionView from './features/BookSession/BookSessionView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
 import authService from './features/auth/authService.js';
@@ -31,6 +32,14 @@ function App() {
           element={
             <ProtectedRoute>
               <TutorsView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/book-session' 
+          element={
+            <ProtectedRoute>
+              <BookSessionView />
             </ProtectedRoute>
           } 
         />

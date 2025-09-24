@@ -196,6 +196,143 @@ const userProfileService = {
   },
 
   /**
+   * Get current user ID using search API with email
+   * @returns {Promise<Object>} - Response with user ID
+   */
+  async getCurrentUserId() {
+    try {
+      // First, get the user profile to obtain the email
+      const userProfileResponse = await profileApi.get('/user');
+      
+      if (!userProfileResponse.data || !userProfileResponse.data.email) {
+        return {
+          success: false,
+          error: 'لم يتم العثور على البريد الإلكتروني في بيانات المستخدم',
+          code: 'EMAIL_NOT_FOUND'
+        };
+      }
+
+      const userEmail = userProfileResponse.data.email;
+      
+      // Now use the search API to get the user ID
+      const searchResponse = await profileApi.get(`/search?emailOrUsername=${encodeURIComponent(userEmail)}`);
+      
+      if (searchResponse.data && searchResponse.data.id) {
+        return {
+          success: true,
+          userId: searchResponse.data.id,
+          data: searchResponse.data,
+          email: userEmail
+        };
+      } else {
+        return {
+          success: false,
+          error: 'لم يتم العثور على المستخدم في نتائج البحث',
+          code: 'USER_NOT_FOUND_IN_SEARCH'
+        };
+      }
+    } catch (error) {
+      console.error('Get user ID error:', error);
+      
+      // Handle different types of errors
+      if (error.response) {
+        const status = error.response.status;
+        const serverMessage = error.response.data?.message || error.response.data?.error;
+        
+        switch (status) {
+          case 401:
+            return {
+              success: false,
+              error: 'انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى',
+              code: 'UNAUTHORIZED'
+            };
+          case 404:
+            return {
+              success: false,
+              error: 'لم يتم العثور على المستخدم',
+              code: 'USER_NOT_FOUND'
+            };
+          default:
+            return {
+              success: false,
+              error: serverMessage || 'فشل في جلب معرف المستخدم',
+              code: 'GET_USER_ID_ERROR'
+            };
+        }
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'لا يمكن الاتصال بالخادم. تحقق من اتصالك بالإنترنت',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'حدث خطأ غير متوقع',
+          code: 'UNEXPECTED_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
+   * Search for user by email or username
+   * @param {string} emailOrUsername - Email or username to search for
+   * @returns {Promise<Object>} - Response with user data
+   */
+  async searchUserByEmail(emailOrUsername) {
+    try {
+      const response = await profileApi.get(`/search?emailOrUsername=${encodeURIComponent(emailOrUsername)}`);
+      
+      return {
+        success: true,
+        userId: response.data.id,
+        data: response.data
+      };
+    } catch (error) {
+      console.error('Search user error:', error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        const serverMessage = error.response.data?.message || error.response.data?.error;
+        
+        switch (status) {
+          case 401:
+            return {
+              success: false,
+              error: 'انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى',
+              code: 'UNAUTHORIZED'
+            };
+          case 404:
+            return {
+              success: false,
+              error: 'لم يتم العثور على المستخدم',
+              code: 'USER_NOT_FOUND'
+            };
+          default:
+            return {
+              success: false,
+              error: serverMessage || 'فشل في البحث عن المستخدم',
+              code: 'SEARCH_ERROR'
+            };
+        }
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'لا يمكن الاتصال بالخادم. تحقق من اتصالك بالإنترنت',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'حدث خطأ غير متوقع',
+          code: 'UNEXPECTED_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
    * Check if user has valid authentication
    * @returns {boolean} - True if user has valid token
    */

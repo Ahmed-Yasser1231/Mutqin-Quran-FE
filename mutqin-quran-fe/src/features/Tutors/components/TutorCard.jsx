@@ -1,7 +1,10 @@
 import React from 'react';
-import { FiUser, FiMail, FiPhone, FiAward, FiChevronLeft } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiUser, FiMail, FiPhone, FiAward, FiChevronLeft, FiCalendar } from 'react-icons/fi';
 
 const TutorCard = ({ tutor, viewMode, onSelect }) => {
+  const navigate = useNavigate();
+  
   const getInitials = (name) => {
     if (!name) return 'غ';
     const names = name.trim().split(' ');
@@ -9,6 +12,11 @@ const TutorCard = ({ tutor, viewMode, onSelect }) => {
       return `${names[0][0]}${names[1][0]}`.toUpperCase();
     }
     return name[0].toUpperCase();
+  };
+
+  const handleBookSession = (e) => {
+    e.stopPropagation(); // Prevent card click
+    navigate('/book-session', { state: { tutorId: tutor.id } });
   };
 
   const formatPoints = (points) => {
@@ -30,7 +38,7 @@ const TutorCard = ({ tutor, viewMode, onSelect }) => {
         onMouseLeave={(e) => e.target.style.borderColor = '#CD945F'}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-1">
             {/* Profile Picture or Initials */}
             <div className="relative">
               {tutor.profilePictureUrl ? (
@@ -76,8 +84,24 @@ const TutorCard = ({ tutor, viewMode, onSelect }) => {
             </div>
           </div>
 
-          {/* Arrow Icon */}
-          <FiChevronLeft className="text-xl" style={{ color: '#CD945F' }} />
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleBookSession}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 hover:scale-105"
+              style={{ 
+                backgroundColor: '#CD945F',
+                color: 'white'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#b3784d'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#CD945F'}
+            >
+              <FiCalendar />
+              <span>حجز جلسة</span>
+            </button>
+            
+            <FiChevronLeft className="text-xl" style={{ color: '#CD945F' }} />
+          </div>
         </div>
       </div>
     );
@@ -160,8 +184,22 @@ const TutorCard = ({ tutor, viewMode, onSelect }) => {
           </div>
         </div>
 
-        {/* View Details Button */}
-        <div className="mt-6 pt-4" style={{ borderTop: '1px solid rgba(205, 148, 95, 0.3)' }}>
+        {/* Action Buttons */}
+        <div className="mt-6 pt-4 space-y-3" style={{ borderTop: '1px solid rgba(205, 148, 95, 0.3)' }}>
+          <button
+            onClick={handleBookSession}
+            className="w-full flex items-center justify-center gap-2 py-3 font-medium text-sm rounded-lg transition-all duration-200 hover:scale-105"
+            style={{ 
+              backgroundColor: '#CD945F',
+              color: 'white'
+            }}
+            onMouseEnter={(e) => e.target.style.backgroundColor = '#b3784d'}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#CD945F'}
+          >
+            <FiCalendar />
+            <span>حجز جلسة</span>
+          </button>
+          
           <button 
             className="w-full flex items-center justify-center gap-2 py-2 font-medium text-sm rounded-lg transition-colors"
             style={{ color: '#CD945F' }}
