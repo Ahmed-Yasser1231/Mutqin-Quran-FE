@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FiUser, FiUsers, FiCalendar, FiLogOut } from 'react-icons/fi';
+import { FiUser, FiUsers, FiCalendar, FiLogOut, FiGrid } from 'react-icons/fi';
 import authService from '../features/auth/authService.js';
 
 const Navigation = () => {
@@ -17,6 +17,11 @@ const Navigation = () => {
   }
 
   const navItems = [
+    {
+      path: '/dashboard',
+      label: 'لوحة التحكم',
+      icon: FiGrid
+    },
     {
       path: '/profile',
       label: 'الملف الشخصي',

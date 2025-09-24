@@ -5,6 +5,7 @@ import LoginView from './features/auth/LoginView';
 import UserProfileView from './features/UserProfile/UserProfileView';
 import TutorsView from './features/Tutors/TutorsView';
 import BookSessionView from './features/BookSession/BookSessionView';
+import StudentDashboardView from './features/StudentDashboard/StudentDashboardView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
 import authService from './features/auth/authService.js';
@@ -44,9 +45,17 @@ function App() {
           } 
         />
         <Route 
+          path='/dashboard' 
+          element={
+            <ProtectedRoute>
+              <StudentDashboardView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
           path='/' 
           element={
-            isAuthenticated ? <Navigate to="/profile" replace /> : <Navigate to="/login" replace />
+            isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
           } 
         />
       </Routes>
