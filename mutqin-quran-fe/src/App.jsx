@@ -6,6 +6,7 @@ import UserProfileView from './features/UserProfile/UserProfileView';
 import TutorsView from './features/Tutors/TutorsView';
 import BookSessionView from './features/BookSession/BookSessionView';
 import StudentDashboardView from './features/StudentDashboard/StudentDashboardView';
+import AIChatView from './features/AIChat/AIChatView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
 import authService from './features/auth/authService.js';
@@ -49,6 +50,14 @@ function App() {
           element={
             <ProtectedRoute>
               <StudentDashboardView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/ai-chat' 
+          element={
+            <ProtectedRoute>
+              <AIChatView />
             </ProtectedRoute>
           } 
         />

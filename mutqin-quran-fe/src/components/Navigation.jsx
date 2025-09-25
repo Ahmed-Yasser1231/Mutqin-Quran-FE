@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FiUser, FiUsers, FiCalendar, FiLogOut, FiGrid } from 'react-icons/fi';
+import { FiUser, FiUsers, FiCalendar, FiLogOut, FiGrid, FiMic } from 'react-icons/fi';
 import authService from '../features/auth/authService.js';
 
 const Navigation = () => {
@@ -36,6 +36,11 @@ const Navigation = () => {
       path: '/book-session',
       label: 'حجز جلسة',
       icon: FiCalendar
+    },
+    {
+      path: '/ai-chat',
+      label: 'التسميع الصوتي',
+      icon: FiMic
     }
   ];
 

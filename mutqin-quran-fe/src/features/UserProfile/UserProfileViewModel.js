@@ -106,6 +106,46 @@ export const useUserProfileViewModel = () => {
     fetchProfile();
   }, [fetchProfile]);
 
+  /**
+   * Delete user account
+   */
+  const deleteAccount = useCallback(async () => {
+    if (!checkAuthStatus()) {
+      setError('يجب تسجيل الدخول أولاً');
+      return false;
+    }
+
+    setIsUpdating(true);
+    setError(null);
+
+    try {
+      const result = await userProfileService.deleteUserAccount();
+      
+      if (result.success) {
+        // Account deleted successfully - user will be automatically logged out by the service
+        return {
+          success: true,
+          message: result.message || 'تم حذف الحساب بنجاح'
+        };
+      } else {
+        setError(result.error || 'حدث خطأ أثناء حذف الحساب');
+        return {
+          success: false,
+          error: result.error || 'حدث خطأ أثناء حذف الحساب'
+        };
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setError('حدث خطأ غير متوقع');
+      return {
+        success: false,
+        error: 'حدث خطأ غير متوقع'
+      };
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [checkAuthStatus]);
+
   // Auto-fetch profile on component mount if authenticated
   useEffect(() => {
     if (checkAuthStatus()) {
@@ -139,6 +179,7 @@ export const useUserProfileViewModel = () => {
     fetchProfile,
     updateProfile,
     reloadProfile,
+    deleteAccount,
     clearError,
     clearSuccess,
     checkAuthStatus,

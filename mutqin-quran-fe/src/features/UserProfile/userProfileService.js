@@ -333,6 +333,76 @@ const userProfileService = {
   },
 
   /**
+   * Delete user account
+   * @returns {Promise<Object>} - Response data from the server
+   */
+  async deleteUserAccount() {
+    try {
+      const response = await profileApi.delete('');
+      
+      if (response.status === 200 || response.status === 204) {
+        // Account deleted successfully, logout user
+        authService.logout();
+        return {
+          success: true,
+          message: 'تم حذف الحساب بنجاح'
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'فشل في حذف الحساب'
+      };
+      
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || error.response.data?.error || 'حدث خطأ أثناء حذف الحساب';
+        
+        if (status === 401) {
+          return {
+            success: false,
+            error: 'انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى',
+            code: 'UNAUTHORIZED'
+          };
+        } else if (status === 403) {
+          return {
+            success: false,
+            error: 'ليس لديك صلاحية لحذف هذا الحساب',
+            code: 'FORBIDDEN'
+          };
+        } else if (status === 404) {
+          return {
+            success: false,
+            error: 'الحساب غير موجود',
+            code: 'NOT_FOUND'
+          };
+        } else {
+          return {
+            success: false,
+            error: message,
+            code: `HTTP_${status}`
+          };
+        }
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'لا يمكن الاتصال بالخادم. تحقق من اتصالك بالإنترنت',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'حدث خطأ غير متوقع',
+          code: 'UNEXPECTED_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
    * Check if user has valid authentication
    * @returns {boolean} - True if user has valid token
    */

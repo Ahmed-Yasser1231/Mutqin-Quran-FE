@@ -10,9 +10,14 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  Container
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
-import { FaSignOutAlt, FaCog, FaBell, FaUser } from 'react-icons/fa';
+import { FaSignOutAlt, FaCog, FaBell, FaUser, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileViewModel } from './UserProfileViewModel.js';
 import authService from '../auth/authService.js';
@@ -31,7 +36,8 @@ export default function UserProfileArabicUI() {
     clearError,
     clearSuccess,
     isAuthenticated,
-    updateProfile
+    updateProfile,
+    deleteAccount
   } = useUserProfileViewModel();
 
   // Form state
@@ -45,6 +51,11 @@ export default function UserProfileArabicUI() {
     username: '',
     phone: ''
   });
+
+  // Settings state
+  const [showSettings, setShowSettings] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
   // Update form data when profile loads
   useEffect(() => {
@@ -104,6 +115,42 @@ export default function UserProfileArabicUI() {
   const handleLogout = () => {
     authService.logout();
     navigate('/login');
+  };
+
+  // Handle settings toggle
+  const handleSettingsClick = () => {
+    setShowSettings(!showSettings);
+  };
+
+  // Handle delete account dialog
+  const handleDeleteAccountClick = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setDeleteDialogOpen(false);
+    setDeleteConfirmationText('');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmationText.toLowerCase() !== 'حذف') {
+      return;
+    }
+
+    try {
+      const result = await deleteAccount();
+      if (result.success) {
+        // User will be automatically logged out and redirected
+        navigate('/login', { 
+          replace: true,
+          state: { message: result.message }
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+    } finally {
+      handleDeleteDialogClose();
+    }
   };
 
   // success message timeout
@@ -194,12 +241,35 @@ export default function UserProfileArabicUI() {
         <MenuItem sx={{ justifyContent: 'flex-end', gap: 1 }}>
           الملف الشخصي <FaUser />
         </MenuItem>
-        <MenuItem sx={{ justifyContent: 'flex-end', gap: 1 }}>
+        <MenuItem 
+          sx={{ justifyContent: 'flex-end', gap: 1 }}
+          onClick={handleSettingsClick}
+        >
           الإعدادات <FaCog />
         </MenuItem>
         <MenuItem sx={{ justifyContent: 'flex-end', gap: 1 }}>
           إشعارات <FaBell />
         </MenuItem>
+
+        {/* Settings submenu - appears when settings is clicked */}
+        {showSettings && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <MenuItem
+              sx={{
+                justifyContent: 'flex-end',
+                gap: 1,
+                color: 'error.main',
+                fontWeight: 'bold',
+                mr: 2,
+                fontSize: '0.9rem'
+              }}
+              onClick={handleDeleteAccountClick}
+            >
+              حذف الحساب <FaTrash />
+            </MenuItem>
+          </>
+        )}
         <Divider sx={{ my: 2 }} />
         <MenuItem
           sx={{
@@ -402,6 +472,80 @@ export default function UserProfileArabicUI() {
           )}
         </Button>
       </Paper>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            direction: 'rtl',
+            textAlign: 'right'
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 'bold' }}>
+          تأكيد حذف الحساب
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2, direction: 'rtl' }}>
+            <strong>تحذير:</strong> هذا الإجراء لا يمكن التراجع عنه!
+          </DialogContentText>
+          <DialogContentText sx={{ mb: 2, direction: 'rtl' }}>
+            سيتم حذف حسابك وجميع بياناتك بشكل نهائي من المنصة. لن تتمكن من استرداد أي من المعلومات أو البيانات المرتبطة بحسابك.
+          </DialogContentText>
+          <DialogContentText sx={{ mb: 3, direction: 'rtl' }}>
+            للمتابعة، يرجى كتابة كلمة <strong>"حذف"</strong> في الحقل أدناه:
+          </DialogContentText>
+          <TextField
+            fullWidth
+            label="اكتب 'حذف' للتأكيد"
+            value={deleteConfirmationText}
+            onChange={(e) => setDeleteConfirmationText(e.target.value)}
+            variant="outlined"
+            sx={{
+              '& .MuiInputLabel-root': {
+                right: 0,
+                left: 'auto',
+                transformOrigin: 'top right',
+                textAlign: 'right'
+              },
+              '& .MuiOutlinedInput-root': {
+                direction: 'rtl'
+              }
+            }}
+            error={deleteConfirmationText !== '' && deleteConfirmationText.toLowerCase() !== 'حذف'}
+            helperText={deleteConfirmationText !== '' && deleteConfirmationText.toLowerCase() !== 'حذف' ? 'يجب كتابة كلمة "حذف" بالضبط' : ''}
+          />
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'flex-start', gap: 2, p: 3 }}>
+          <Button
+            onClick={handleDeleteDialogClose}
+            variant="outlined"
+            sx={{ minWidth: 100 }}
+          >
+            إلغاء
+          </Button>
+          <Button
+            onClick={handleDeleteAccount}
+            variant="contained"
+            color="error"
+            disabled={isUpdating || deleteConfirmationText.toLowerCase() !== 'حذف'}
+            sx={{ minWidth: 100 }}
+          >
+            {isUpdating ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+                جاري الحذف...
+              </>
+            ) : (
+              'حذف الحساب نهائياً'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
