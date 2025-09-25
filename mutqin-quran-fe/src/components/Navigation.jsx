@@ -6,6 +6,8 @@ import authService from '../features/auth/authService.js';
 const Navigation = () => {
   const location = useLocation();
   const isAuthenticated = authService.isAuthenticated();
+  const userData = authService.getUserProfile();
+  const userRole = userData?.role?.toUpperCase();
 
   const handleLogout = () => {
     authService.logout();
@@ -16,33 +18,48 @@ const Navigation = () => {
     return null;
   }
 
-  const navItems = [
-    {
-      path: '/dashboard',
-      label: 'لوحة التحكم',
-      icon: FiGrid
-    },
-    {
-      path: '/profile',
-      label: 'الملف الشخصي',
-      icon: FiUser
-    },
-    {
-      path: '/tutors',
-      label: 'المعلمون',
-      icon: FiUsers
-    },
-    {
-      path: '/book-session',
-      label: 'حجز جلسة',
-      icon: FiCalendar
-    },
-    {
-      path: '/ai-chat',
-      label: 'التسميع الصوتي',
-      icon: FiMic
+  // Define navigation items based on user role
+  const getNavItems = () => {
+    const commonItems = [
+      {
+        path: '/dashboard',
+        label: 'لوحة التحكم',
+        icon: FiGrid
+      },
+      {
+        path: '/profile',
+        label: 'الملف الشخصي',
+        icon: FiUser
+      }
+    ];
+
+    if (userRole === 'TUTOR') {
+      // Tutor-specific navigation (no AI chat, book session, or tutors page)
+      return commonItems;
+    } else {
+      // Student/Parent navigation (full access)
+      return [
+        ...commonItems,
+        {
+          path: '/tutors',
+          label: 'المعلمون',
+          icon: FiUsers
+        },
+        {
+          path: '/book-session',
+          label: 'حجز جلسة',
+          icon: FiCalendar
+        },
+        {
+          path: '/ai-chat',
+          label: 'التسميع الصوتي',
+          icon: FiMic
+        }
+      ];
     }
-  ];
+  };
+
+  const navItems = getNavItems();
 
   return (
     <nav className="shadow-lg border-b-2" style={{ backgroundColor: '#F8F1DE', borderBottomColor: '#CD945F' }}>

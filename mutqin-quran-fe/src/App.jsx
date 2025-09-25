@@ -6,10 +6,23 @@ import UserProfileView from './features/UserProfile/UserProfileView';
 import TutorsView from './features/Tutors/TutorsView';
 import BookSessionView from './features/BookSession/BookSessionView';
 import StudentDashboardView from './features/StudentDashboard/StudentDashboardView';
+import TutorDashboardView from './features/TutorDashboard/TutorDashboardView';
 import AIChatView from './features/AIChat/AIChatView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
 import authService from './features/auth/authService.js';
+
+// Component to handle dashboard redirection based on user role
+const DashboardRedirect = () => {
+  const userData = authService.getUserProfile();
+  const userRole = userData?.role?.toUpperCase();
+  
+  if (userRole === 'TUTOR') {
+    return <TutorDashboardView />;
+  } else {
+    return <StudentDashboardView />;
+  }
+};
 
 function App() {
   // Check if user is already authenticated
@@ -29,10 +42,11 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        {/* Student/Parent only routes */}
         <Route 
           path='/tutors' 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['STUDENT', 'PARENT']}>
               <TutorsView />
             </ProtectedRoute>
           } 
@@ -40,24 +54,25 @@ function App() {
         <Route 
           path='/book-session' 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['STUDENT', 'PARENT']}>
               <BookSessionView />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path='/dashboard' 
-          element={
-            <ProtectedRoute>
-              <StudentDashboardView />
             </ProtectedRoute>
           } 
         />
         <Route 
           path='/ai-chat' 
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['STUDENT', 'PARENT']}>
               <AIChatView />
+            </ProtectedRoute>
+          } 
+        />
+        {/* Role-based dashboard */}
+        <Route 
+          path='/dashboard' 
+          element={
+            <ProtectedRoute>
+              <DashboardRedirect />
             </ProtectedRoute>
           } 
         />

@@ -27,13 +27,16 @@ const authService = {
         password,
       });
       
-      // If login is successful, store ONLY token in localStorage
+      // If login is successful, store token and fetch user profile
       if (response.data.token && response.data.type) {
         // Format token as "Bearer {token}" for API calls
         const formattedToken = `${response.data.type} ${response.data.token}`;
         localStorage.setItem('authToken', formattedToken);
         // Set auth header for future requests
         this.setAuthHeader(formattedToken);
+        
+        // Fetch and store user profile data
+        await this.fetchAndStoreUserProfile(formattedToken);
       }
       
       return {
@@ -281,6 +284,130 @@ const authService = {
   },
 
   /**
+   * Fetch user profile data from API and store in localStorage
+   * @param {string} token - Authentication token (formatted as "Bearer {token}")
+   * @returns {Promise<Object>} - Response data from the server
+   */
+  async fetchAndStoreUserProfile(token) {
+    try {
+      const profileResponse = await axios.get('https://mutqin-springboot-backend-1.onrender.com/api/profile/user', {
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      });
+      
+      if (profileResponse.data) {
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify(profileResponse.data));
+        
+        return {
+          success: true,
+          data: profileResponse.data,
+          message: 'تم جلب بيانات المستخدم بنجاح'
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'لم يتم العثور على بيانات المستخدم',
+        code: 'NO_USER_DATA'
+      };
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        const serverMessage = error.response.data?.message || error.response.data?.error;
+        
+        switch (status) {
+          case 401:
+            return {
+              success: false,
+              error: 'انتهت صلاحية جلسة المستخدم',
+              code: 'TOKEN_EXPIRED'
+            };
+          case 404:
+            return {
+              success: false,
+              error: 'المستخدم غير موجود',
+              code: 'USER_NOT_FOUND'
+            };
+          case 500:
+            return {
+              success: false,
+              error: 'خطأ في الخادم أثناء جلب بيانات المستخدم',
+              code: 'SERVER_ERROR'
+            };
+          default:
+            return {
+              success: false,
+              error: serverMessage || 'خطأ في جلب بيانات المستخدم',
+              code: 'PROFILE_FETCH_ERROR'
+            };
+        }
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'لا يمكن الاتصال بالخادم لجلب بيانات المستخدم',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'حدث خطأ غير متوقع أثناء جلب بيانات المستخدم',
+          code: 'UNEXPECTED_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
+   * Get stored user profile data from localStorage
+   * @returns {Object|null} - User profile data or null
+   */
+  getUserProfile() {
+    try {
+      const userData = localStorage.getItem('userData');
+      if (!userData || userData === 'undefined' || userData === 'null') {
+        return null;
+      }
+      return JSON.parse(userData);
+    } catch (error) {
+      console.warn('Error parsing user data from localStorage:', error);
+      localStorage.removeItem('userData');
+      return null;
+    }
+  },
+
+  /**
+   * Refresh user profile data from API (requires valid token)
+   * @returns {Promise<Object>} - Response data from the server
+   */
+  async refreshUserProfile() {
+    try {
+      const token = this.getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'لا توجد جلسة نشطة',
+          code: 'NO_TOKEN'
+        };
+      }
+      
+      return await this.fetchAndStoreUserProfile(token);
+    } catch (error) {
+      console.error('Error refreshing user profile:', error);
+      return {
+        success: false,
+        error: 'حدث خطأ أثناء تحديث بيانات المستخدم',
+        code: 'REFRESH_ERROR'
+      };
+    }
+  },
+
+  /**
    * Get suggested fixes for common errors
    * @param {number} status - HTTP status code
    * @returns {string} - Suggested fix
@@ -306,6 +433,7 @@ const authService = {
   logout() {
     try {
       localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
       // Clear auth header
       this.setAuthHeader(null);
     } catch (error) {
@@ -319,6 +447,7 @@ const authService = {
   clearAllAuthData() {
     try {
       localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
       this.setAuthHeader(null);
     } catch (error) {
       console.warn('Error clearing auth data:', error);
