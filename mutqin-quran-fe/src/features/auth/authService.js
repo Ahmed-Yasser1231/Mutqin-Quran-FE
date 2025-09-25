@@ -113,40 +113,30 @@ const authService = {
    */
   async signup(username, email, phoneNumber, password, confirmPassword, userRole, memorizationLevel = '') {
     try {
-      // Handle phone number conversion - try different approaches
-      let phoneAsNumber;
-      
-      // Remove any non-digits first
+      // Clean phone number but keep as string
       const cleanPhone = phoneNumber.replace(/\D/g, '');
       
-      // Try converting to number
-      phoneAsNumber = parseInt(cleanPhone, 10);
-      
-      // Alternative: If backend expects the full number including leading zero
-      // you might need to convert differently or keep as string
+      // Validate phone number
+      if (!cleanPhone || cleanPhone.length < 10) {
+        return {
+          success: false,
+          error: 'رقم الهاتف غير صحيح - يجب أن يحتوي على 10 أرقام على الأقل',
+          code: 'INVALID_PHONE'
+        };
+      }
       
       // Map form fields to API fields
       const requestData = {
-        username,
-        email,
-        phone: phoneAsNumber, // Convert phone to integer
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        phone: cleanPhone, // Keep phone as string
         password,
         role: userRole.toUpperCase(), // Map userRole to role and ensure uppercase
-        memorizationLevel: memorizationLevel.toUpperCase() // Include memorization level (uppercase)
       };
       
-      // Only include memorizationLevel if user is a student
-      if (userRole.toUpperCase() !== 'STUDENT') {
-        delete requestData.memorizationLevel;
-      }
-      
-      // Validate phone conversion
-      if (isNaN(requestData.phone)) {
-        return {
-          success: false,
-          error: 'رقم الهاتف غير صحيح',
-          code: 'INVALID_PHONE'
-        };
+      // Only include memorizationLevel if user is a student and it's provided
+      if (userRole.toUpperCase() === 'STUDENT' && memorizationLevel && memorizationLevel.trim()) {
+        requestData.memorizationLevel = memorizationLevel.toUpperCase();
       }
       
       const response = await authApi.post('/signup', requestData);
