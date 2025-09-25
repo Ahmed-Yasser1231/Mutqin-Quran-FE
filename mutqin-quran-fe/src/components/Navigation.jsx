@@ -34,8 +34,15 @@ const Navigation = () => {
     ];
 
     if (userRole === 'TUTOR') {
-      // Tutor-specific navigation (no AI chat, book session, or tutors page)
-      return commonItems;
+      // Tutor-specific navigation
+      return [
+        ...commonItems,
+        {
+          path: '/my-students',
+          label: 'طلابي',
+          icon: FiUsers
+        }
+      ];
     } else {
       // Student/Parent navigation (full access)
       return [
