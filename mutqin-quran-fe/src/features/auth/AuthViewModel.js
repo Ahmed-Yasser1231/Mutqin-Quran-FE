@@ -200,6 +200,64 @@ export const useAuthViewModel = () => {
   }, [updateAuthState]);
 
   /**
+   * Initiate Google login process
+   * @returns {Promise<Object>} - Google login initiation result
+   */
+  const initiateGoogleLogin = useCallback(async () => {
+    // Set loading state
+    updateAuthState(state => {
+      state.setLoading(true);
+    });
+
+    try {
+      // Call auth service to get Google OAuth URL for login
+      const result = await authService.initiateGoogleLogin();
+      
+      if (result.success) {
+        // Clear loading state (we don't set success here as the user needs to complete OAuth)
+        updateAuthState(state => {
+          state.setLoading(false);
+        });
+        
+        // Redirect user to Google OAuth URL
+        if (result.authUrl) {
+          window.location.href = result.authUrl;
+        }
+        
+        return {
+          success: true,
+          message: result.message,
+          authUrl: result.authUrl
+        };
+      } else {
+        // Initiation failed
+        updateAuthState(state => {
+          state.setError(result.error);
+          state.setLoading(false);
+        });
+        
+        return {
+          success: false,
+          error: result.error,
+          code: result.code
+        };
+      }
+    } catch (error) {
+      // Unexpected error
+      console.error('Google login initiation error in ViewModel:', error);
+      updateAuthState(state => {
+        state.setError('حدث خطأ غير متوقع أثناء تهيئة تسجيل الدخول بواسطة Google');
+        state.setLoading(false);
+      });
+      
+      return {
+        success: false,
+        error: 'حدث خطأ غير متوقع أثناء تهيئة تسجيل الدخول بواسطة Google'
+      };
+    }
+  }, [updateAuthState]);
+
+  /**
    * Initiate Google signup process
    * @returns {Promise<Object>} - Google signup initiation result
    */
@@ -462,6 +520,7 @@ export const useAuthViewModel = () => {
     // Actions
     login,
     signup,
+    initiateGoogleLogin,
     initiateGoogleSignup,
     handleGoogleCallback,
     handleGoogleLoginSuccess,

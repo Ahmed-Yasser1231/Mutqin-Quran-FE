@@ -246,6 +246,77 @@ const authService = {
   },
 
   /**
+   * Initiate Google OAuth login
+   * @returns {Promise<Object>} - Response with OAuth URL
+   */
+  async initiateGoogleLogin() {
+    try {
+      const response = await authApi.get('/oauth2/google/login');
+      
+      if (response.data && response.data['follow this url in the browser']) {
+        // Replace localhost with the actual backend URL
+        let authUrl = response.data['follow this url in the browser'];
+        if (authUrl.includes('localhost:8080')) {
+          authUrl = authUrl.replace('http://localhost:8080', 'https://mutqin-springboot-backend-1.onrender.com');
+        }
+        
+        return {
+          success: true,
+          data: response.data,
+          authUrl: authUrl,
+          message: 'تم جلب رابط تسجيل الدخول بواسطة Google'
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'لم يتم العثور على رابط تسجيل الدخول',
+        code: 'NO_AUTH_URL'
+      };
+    } catch (error) {
+      console.error('Google login initiation error:', error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        const serverMessage = error.response.data?.message || error.response.data?.error;
+        
+        switch (status) {
+          case 404:
+            return {
+              success: false,
+              error: 'خدمة تسجيل الدخول بواسطة Google غير متاحة',
+              code: 'SERVICE_NOT_FOUND'
+            };
+          case 500:
+            return {
+              success: false,
+              error: 'خطأ في الخادم أثناء تهيئة تسجيل الدخول بواسطة Google',
+              code: 'SERVER_ERROR'
+            };
+          default:
+            return {
+              success: false,
+              error: serverMessage || 'خطأ في تهيئة تسجيل الدخول بواسطة Google',
+              code: 'GOOGLE_LOGIN_ERROR'
+            };
+        }
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'لا يمكن الاتصال بالخادم لتهيئة تسجيل الدخول بواسطة Google',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'حدث خطأ غير متوقع أثناء تهيئة تسجيل الدخول بواسطة Google',
+          code: 'UNEXPECTED_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
    * Initiate Google OAuth signup
    * @returns {Promise<Object>} - Response with OAuth URL
    */

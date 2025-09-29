@@ -14,8 +14,8 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { FcGoogle } from "react-icons/fc";
 import { useAuthViewModel } from "./AuthViewModel.js";
+import GoogleLoginButton from "./components/GoogleLoginButton";
 
 const validationSchema = Yup.object({
   email: Yup.string().email("صيغة البريد الإلكتروني غير صحيحة").required("البريد الإلكتروني مطلوب"),
@@ -312,50 +312,7 @@ export default function LoginView() {
               </Box>
 
               {/* زر تسجيل الدخول بواسطة Google */}
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => {
-                  // TODO: Implement Google login
-                }}
-                sx={{
-                  borderColor: "#E0E0E0",
-                  backgroundColor: "#fff",
-                  color: "#424242",
-                  borderRadius: "20px",
-                  py: 2,
-                  px: 3,
-                  textTransform: "none",
-                  fontSize: "16px",
-                  fontWeight: "500",
-                  boxShadow: "0px 1px 3px rgba(0,0,0,0.08)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 2,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    backgroundColor: "#fafafa",
-                    borderColor: "#dadce0",
-                    boxShadow: "0px 2px 8px rgba(0,0,0,0.12)",
-                    transform: "translateY(-1px)"
-                  },
-                  "&:active": {
-                    transform: "translateY(0px)"
-                  }
-                }}
-              >
-                <FcGoogle size={20} />
-                <Typography
-                  sx={{
-                    fontSize: "16px",
-                    fontWeight: "500",
-                    color: "#424242"
-                  }}
-                >
-                  تسجيل الدخول بواسطة Google
-                </Typography>
-              </Button>
+              <GoogleLoginButton />
 
 
               {/* رابط إنشاء حساب */}
