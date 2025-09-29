@@ -20,6 +20,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuthViewModel } from "./AuthViewModel";
 import { USER_ROLES, MEMORIZATION_LEVELS } from "./AuthModel";
+import GoogleSignupButton from "./components/GoogleSignupButton";
 
 const validationSchema = Yup.object({
   username: Yup.string().required("اسم المستخدم مطلوب"),
@@ -449,8 +450,45 @@ export default function SignupView() {
                 )}
               </Button>
 
+              {/* Divider */}
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mt: 3, 
+                mb: 2 
+              }}>
+                <Box sx={{ 
+                  flex: 1, 
+                  height: '1px', 
+                  backgroundColor: '#ddd' 
+                }} />
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    mx: 2, 
+                    color: '#666',
+                    fontSize: '14px'
+                  }}
+                >
+                  أو
+                </Typography>
+                <Box sx={{ 
+                  flex: 1, 
+                  height: '1px', 
+                  backgroundColor: '#ddd' 
+                }} />
+              </Box>
+
+              {/* Google Signup Button */}
+              <GoogleSignupButton 
+                onError={(error) => {
+                  // Error will be handled by the GoogleSignupButton component itself
+                  console.error('Google signup error:', error);
+                }}
+              />
+
               {/* رابط تسجيل الدخول */}
-              <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Box sx={{ textAlign: 'center', mt: 3 }}>
                 <Typography variant="body2" sx={{ color: '#666' }}>
                   لديك حساب بالفعل؟{' '}
                   <Link 

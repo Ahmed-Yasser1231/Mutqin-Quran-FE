@@ -246,6 +246,214 @@ const authService = {
   },
 
   /**
+   * Initiate Google OAuth signup
+   * @returns {Promise<Object>} - Response with OAuth URL
+   */
+  async initiateGoogleSignup() {
+    try {
+      const response = await authApi.get('/oauth2/google/signup');
+      
+      if (response.data && response.data['follow this url in the browser']) {
+        // Replace localhost with the actual backend URL
+        let authUrl = response.data['follow this url in the browser'];
+        if (authUrl.includes('localhost:8080')) {
+          authUrl = authUrl.replace('http://localhost:8080', 'https://mutqin-springboot-backend-1.onrender.com');
+        }
+        
+        return {
+          success: true,
+          data: response.data,
+          authUrl: authUrl,
+          message: 'تم جلب رابط التسجيل بواسطة Google'
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'لم يتم العثور على رابط التسجيل',
+        code: 'NO_AUTH_URL'
+      };
+    } catch (error) {
+      console.error('Google signup initiation error:', error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        const serverMessage = error.response.data?.message || error.response.data?.error;
+        
+        switch (status) {
+          case 500:
+            return {
+              success: false,
+              error: 'خطأ في الخادم أثناء تهيئة التسجيل بواسطة Google',
+              code: 'SERVER_ERROR'
+            };
+          case 503:
+            return {
+              success: false,
+              error: 'خدمة Google غير متاحة حالياً',
+              code: 'SERVICE_UNAVAILABLE'
+            };
+          default:
+            return {
+              success: false,
+              error: serverMessage || 'خطأ في تهيئة التسجيل بواسطة Google',
+              code: 'GOOGLE_SIGNUP_ERROR'
+            };
+        }
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'لا يمكن الاتصال بالخادم لتهيئة التسجيل بواسطة Google',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'حدث خطأ غير متوقع أثناء تهيئة التسجيل بواسطة Google',
+          code: 'UNEXPECTED_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
+   * Handle Google OAuth callback and complete authentication
+   * @param {string} code - OAuth authorization code from callback
+   * @param {string} state - OAuth state parameter from callback
+   * @returns {Promise<Object>} - Response data from the server
+   */
+  async handleGoogleCallback(code, state) {
+    try {
+      const response = await authApi.post('/oauth2/google/callback', {
+        code,
+        state
+      });
+      
+      // If authentication is successful, store token and fetch user profile
+      if (response.data.token && response.data.type) {
+        // Format token as "Bearer {token}" for API calls
+        const formattedToken = `${response.data.type} ${response.data.token}`;
+        localStorage.setItem('authToken', formattedToken);
+        // Set auth header for future requests
+        this.setAuthHeader(formattedToken);
+        
+        // Fetch and store user profile data
+        await this.fetchAndStoreUserProfile(formattedToken);
+      }
+      
+      return {
+        success: true,
+        data: response.data,
+        message: 'تم تسجيل الدخول بواسطة Google بنجاح'
+      };
+    } catch (error) {
+      console.error('Google callback error:', error);
+      
+      if (error.response) {
+        const status = error.response.status;
+        const serverMessage = error.response.data?.message || error.response.data?.error;
+        
+        switch (status) {
+          case 400:
+            return {
+              success: false,
+              error: 'كود التحقق غير صحيح أو منتهي الصلاحية',
+              code: 'INVALID_CODE'
+            };
+          case 401:
+            return {
+              success: false,
+              error: 'فشل في التحقق من بيانات Google',
+              code: 'GOOGLE_AUTH_FAILED'
+            };
+          case 409:
+            return {
+              success: false,
+              error: 'المستخدم مسجل مسبقاً بطريقة أخرى',
+              code: 'USER_EXISTS'
+            };
+          case 500:
+            return {
+              success: false,
+              error: 'خطأ في الخادم أثناء معالجة تسجيل الدخول بواسطة Google',
+              code: 'SERVER_ERROR'
+            };
+          default:
+            return {
+              success: false,
+              error: serverMessage || 'خطأ في تسجيل الدخول بواسطة Google',
+              code: 'GOOGLE_AUTH_ERROR'
+            };
+        }
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'لا يمكن الاتصال بالخادم لإكمال تسجيل الدخول بواسطة Google',
+          code: 'NETWORK_ERROR'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'حدث خطأ غير متوقع أثناء تسجيل الدخول بواسطة Google',
+          code: 'UNEXPECTED_ERROR'
+        };
+      }
+    }
+  },
+
+  /**
+   * Handle Google login success callback with direct token and user data
+   * @param {string} token - JWT token
+   * @param {string} name - User name
+   * @param {string} email - User email
+   * @param {string} googleId - Google ID
+   * @returns {Promise<Object>} - Response data from the server
+   */
+  async handleGoogleLoginSuccess(token, name, email, googleId) {
+    try {
+      // Store the token directly (it should already be properly formatted)
+      localStorage.setItem('authToken', `Bearer ${token}`);
+      
+      // Set auth header for future requests
+      this.setAuthHeader(`Bearer ${token}`);
+      
+      // Create user object from provided data
+      const userData = {
+        name: decodeURIComponent(name),
+        email: decodeURIComponent(email),
+        googleId: googleId
+      };
+      
+      // Store user data in localStorage
+      localStorage.setItem('userProfile', JSON.stringify(userData));
+      
+      // Try to fetch complete profile from backend
+      try {
+        await this.fetchAndStoreUserProfile(`Bearer ${token}`);
+      } catch (profileError) {
+        console.warn('Failed to fetch complete profile, using basic data:', profileError);
+      }
+      
+      return {
+        success: true,
+        data: {
+          token: token,
+          user: userData
+        },
+        message: 'تم تسجيل الدخول بواسطة Google بنجاح'
+      };
+    } catch (error) {
+      console.error('Google login success error:', error);
+      
+      return {
+        success: false,
+        error: 'حدث خطأ أثناء معالجة تسجيل الدخول بواسطة Google',
+        code: 'GOOGLE_LOGIN_ERROR'
+      };
+    }
+  },
+
+  /**
    * Test server health and basic connectivity
    * @returns {Promise<Object>} - Test result
    */

@@ -2,6 +2,8 @@ import './App.css';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import SignupView  from './features/auth/SignupView';
 import LoginView from './features/auth/LoginView';
+import GoogleCallbackHandler from './features/auth/components/GoogleCallbackHandler';
+import GoogleLoginSuccessHandler from './features/auth/components/GoogleLoginSuccessHandler';
 import UserProfileView from './features/UserProfile/UserProfileView';
 import TutorsView from './features/Tutors/TutorsView';
 import BookSessionView from './features/BookSession/BookSessionView';
@@ -35,6 +37,8 @@ function App() {
       <Routes>
         <Route path='/signup' element={<SignupView />} />
         <Route path='/login' element={<LoginView />} />
+        <Route path='/auth/google/callback' element={<GoogleCallbackHandler />} />
+        <Route path='/login/success' element={<GoogleLoginSuccessHandler />} />
         <Route 
           path='/profile' 
           element={

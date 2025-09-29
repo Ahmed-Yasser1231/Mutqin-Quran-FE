@@ -200,6 +200,175 @@ export const useAuthViewModel = () => {
   }, [updateAuthState]);
 
   /**
+   * Initiate Google signup process
+   * @returns {Promise<Object>} - Google signup initiation result
+   */
+  const initiateGoogleSignup = useCallback(async () => {
+    // Set loading state
+    updateAuthState(state => {
+      state.setLoading(true);
+    });
+
+    try {
+      // Call auth service to get Google OAuth URL
+      const result = await authService.initiateGoogleSignup();
+      
+      if (result.success) {
+        // Clear loading state (we don't set success here as the user needs to complete OAuth)
+        updateAuthState(state => {
+          state.setLoading(false);
+        });
+        
+        return {
+          success: true,
+          authUrl: result.authUrl,
+          message: result.message
+        };
+      } else {
+        // Failed to get OAuth URL
+        updateAuthState(state => {
+          state.setError(result.error);
+          state.setLoading(false);
+        });
+        
+        return {
+          success: false,
+          error: result.error,
+          code: result.code
+        };
+      }
+    } catch (error) {
+      // Unexpected error
+      console.error('Google signup initiation error in ViewModel:', error);
+      updateAuthState(state => {
+        state.setError('حدث خطأ غير متوقع أثناء تهيئة التسجيل بواسطة Google');
+        state.setLoading(false);
+      });
+      
+      return {
+        success: false,
+        error: 'حدث خطأ غير متوقع أثناء تهيئة التسجيل بواسطة Google'
+      };
+    }
+  }, [updateAuthState]);
+
+  /**
+   * Handle Google OAuth callback
+   * @param {string} code - OAuth authorization code
+   * @param {string} state - OAuth state parameter
+   * @returns {Promise<Object>} - Google callback result
+   */
+  const handleGoogleCallback = useCallback(async (code, state) => {
+    // Set loading state
+    updateAuthState(authState => {
+      authState.setLoading(true);
+    });
+
+    try {
+      // Call auth service to handle callback
+      const result = await authService.handleGoogleCallback(code, state);
+      
+      if (result.success) {
+        // Authentication successful
+        updateAuthState(authState => {
+          authState.setToken(result.data.token);
+          authState.setUser(new User(result.data.user));
+          authState.setLoading(false);
+        });
+        
+        return {
+          success: true,
+          user: result.data.user,
+          message: result.message
+        };
+      } else {
+        // Authentication failed
+        updateAuthState(authState => {
+          authState.setError(result.error);
+          authState.setLoading(false);
+        });
+        
+        return {
+          success: false,
+          error: result.error,
+          code: result.code
+        };
+      }
+    } catch (error) {
+      // Unexpected error
+      console.error('Google callback error in ViewModel:', error);
+      updateAuthState(authState => {
+        authState.setError('حدث خطأ غير متوقع أثناء معالجة تسجيل الدخول بواسطة Google');
+        authState.setLoading(false);
+      });
+      
+      return {
+        success: false,
+        error: 'حدث خطأ غير متوقع أثناء معالجة تسجيل الدخول بواسطة Google'
+      };
+    }
+  }, [updateAuthState]);
+
+  /**
+   * Handle Google login success callback with direct token and user data
+   * @param {string} token - JWT token
+   * @param {string} name - User name
+   * @param {string} email - User email
+   * @param {string} googleId - Google ID
+   * @returns {Promise<Object>} - Login success result
+   */
+  const handleGoogleLoginSuccess = useCallback(async (token, name, email, googleId) => {
+    // Set loading state
+    updateAuthState(authState => {
+      authState.setLoading(true);
+    });
+
+    try {
+      // Call auth service to handle login success
+      const result = await authService.handleGoogleLoginSuccess(token, name, email, googleId);
+      
+      if (result.success) {
+        // Authentication successful
+        updateAuthState(authState => {
+          authState.setToken(result.data.token);
+          authState.setUser(new User(result.data.user));
+          authState.setLoading(false);
+        });
+        
+        return {
+          success: true,
+          user: result.data.user,
+          message: result.message
+        };
+      } else {
+        // Authentication failed
+        updateAuthState(authState => {
+          authState.setError(result.error);
+          authState.setLoading(false);
+        });
+        
+        return {
+          success: false,
+          error: result.error,
+          code: result.code
+        };
+      }
+    } catch (error) {
+      // Unexpected error
+      console.error('Google login success error in ViewModel:', error);
+      updateAuthState(authState => {
+        authState.setError('حدث خطأ غير متوقع أثناء معالجة تسجيل الدخول بواسطة Google');
+        authState.setLoading(false);
+      });
+      
+      return {
+        success: false,
+        error: 'حدث خطأ غير متوقع أثناء معالجة تسجيل الدخول بواسطة Google'
+      };
+    }
+  }, [updateAuthState]);
+
+  /**
    * Handle user logout
    */
   const logout = useCallback(() => {
@@ -293,6 +462,9 @@ export const useAuthViewModel = () => {
     // Actions
     login,
     signup,
+    initiateGoogleSignup,
+    handleGoogleCallback,
+    handleGoogleLoginSuccess,
     logout,
     clearError,
     refreshUserData,
