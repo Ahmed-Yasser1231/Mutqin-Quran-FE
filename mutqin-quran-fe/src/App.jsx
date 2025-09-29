@@ -10,6 +10,8 @@ import BookSessionView from './features/BookSession/BookSessionView';
 import StudentDashboardView from './features/StudentDashboard/StudentDashboardView';
 import TutorDashboardView from './features/TutorDashboard/TutorDashboardView';
 import TutorStudentsView from './features/TutorStudents/TutorStudentsView';
+import TutorCalendlyView from './features/TutorCalendly/TutorCalendlyView';
+import SessionConfirmView from './features/SessionConfirm/SessionConfirmView';
 import AIChatView from './features/AIChat/AIChatView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navigation from './components/Navigation';
@@ -78,6 +80,22 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['TUTOR']}>
               <TutorStudentsView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/calendly-setup' 
+          element={
+            <ProtectedRoute allowedRoles={['TUTOR']}>
+              <TutorCalendlyView />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path='/confirm-session' 
+          element={
+            <ProtectedRoute allowedRoles={['TUTOR']}>
+              <SessionConfirmView />
             </ProtectedRoute>
           } 
         />

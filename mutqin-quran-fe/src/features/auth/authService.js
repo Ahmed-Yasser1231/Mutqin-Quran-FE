@@ -35,8 +35,8 @@ const authService = {
         // Set auth header for future requests
         this.setAuthHeader(formattedToken);
         
-        // Fetch and store user profile data
-        await this.fetchAndStoreUserProfile(formattedToken);
+        // Fetch and store user profile data using email
+        await this.fetchAndStoreUserProfile(formattedToken, email);
       }
       
       return {
@@ -498,9 +498,9 @@ const authService = {
       // Store user data in localStorage
       localStorage.setItem('userProfile', JSON.stringify(userData));
       
-      // Try to fetch complete profile from backend
+      // Try to fetch complete profile from backend using email
       try {
-        await this.fetchAndStoreUserProfile(`Bearer ${token}`);
+        await this.fetchAndStoreUserProfile(`Bearer ${token}`, decodeURIComponent(email));
       } catch (profileError) {
         console.warn('Failed to fetch complete profile, using basic data:', profileError);
       }
@@ -565,21 +565,41 @@ const authService = {
   /**
    * Fetch user profile data from API and store in localStorage
    * @param {string} token - Authentication token (formatted as "Bearer {token}")
+   * @param {string} emailOrUsername - User's email or username for profile search (optional)
    * @returns {Promise<Object>} - Response data from the server
    */
-  async fetchAndStoreUserProfile(token) {
+  async fetchAndStoreUserProfile(token, emailOrUsername = null) {
     try {
-      const profileResponse = await axios.get('https://mutqin-springboot-backend-1.onrender.com/api/profile/user', {
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000
-      });
+      let profileResponse;
+      
+      if (emailOrUsername) {
+        // Use the search API to get user profile by email or username
+        profileResponse = await axios.get(`https://mutqin-springboot-backend-1.onrender.com/api/profile/search?emailOrUsername=${encodeURIComponent(emailOrUsername)}`, {
+          headers: {
+            'Authorization': token,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        });
+      } else {
+        // Fallback to the original user profile endpoint
+        profileResponse = await axios.get('https://mutqin-springboot-backend-1.onrender.com/api/profile/user', {
+          headers: {
+            'Authorization': token,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        });
+      }
       
       if (profileResponse.data) {
         // Store user data in localStorage
         localStorage.setItem('userData', JSON.stringify(profileResponse.data));
+        
+        // Also store the user ID separately for easy access
+        if (profileResponse.data.id) {
+          localStorage.setItem('userId', profileResponse.data.id.toString());
+        }
         
         return {
           success: true,
@@ -675,7 +695,11 @@ const authService = {
         };
       }
       
-      return await this.fetchAndStoreUserProfile(token);
+      // Try to get email from existing user data for the search API
+      const existingUserData = this.getUserData();
+      const emailOrUsername = existingUserData?.email || existingUserData?.username;
+      
+      return await this.fetchAndStoreUserProfile(token, emailOrUsername);
     } catch (error) {
       console.error('Error refreshing user profile:', error);
       return {
@@ -776,6 +800,60 @@ const authService = {
     } else {
       delete authApi.defaults.headers.common['Authorization'];
     }
+  },
+
+  /**
+   * Get user ID from localStorage
+   * @returns {string|null} - User ID or null if not found
+   */
+  getUserId() {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        return userId;
+      }
+      
+      // Fallback: try to get ID from userData
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        return parsedData.id ? parsedData.id.toString() : null;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting user ID:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get user data from localStorage
+   * @returns {Object|null} - User data object or null if not found
+   */
+  getUserData() {
+    try {
+      const userData = localStorage.getItem('userData');
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error('Error getting user data:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get current user information including ID
+   * @returns {Object} - User information object
+   */
+  getCurrentUser() {
+    const userData = this.getUserData();
+    const userId = this.getUserId();
+    
+    return {
+      id: userId,
+      data: userData,
+      isLoggedIn: !!userData && !!userId
+    };
   }
 };
 
